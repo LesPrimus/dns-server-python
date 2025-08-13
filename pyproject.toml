@@ -1,0 +1,9 @@
+[project]
+name = "codecrafters-dns-server-python"
+version = "0.1.0"
+description = "Add your description here"
+requires-python = ">=3.13"
+dependencies = [
+    "lark>=1.2.2",
+    "pyparsing>=3.2.3",
+]
