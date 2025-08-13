@@ -11,9 +11,14 @@ class DNSHeader:
     authority_count: int
     additional_count: int
 
+    @classmethod
+    def from_bytes(cls, buf):
+        return cls(*struct.unpack("!6H", buf[:12]))
+
     @property
     def as_bytes(self):
         return struct.pack("!HHHHHH", *astuple(self))
+
 
 def main():
     udp_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -23,16 +28,19 @@ def main():
         try:
             buf, source = udp_socket.recvfrom(512)
 
-            response = DNSHeader(
-                id=1234,
-                flags=0x8180,
-                question_count=0,
-                answer_count=0,
-                authority_count=0,
-                additional_count=0,
-            ).as_bytes
+            request_header = DNSHeader.from_bytes(buf)
 
-            udp_socket.sendto(response, source)
+            response_header = DNSHeader(
+                id=request_header.id,
+                flags=0x8180,
+                question_count=request_header.question_count,
+                answer_count=request_header.answer_count,
+                authority_count=request_header.authority_count,
+                additional_count=request_header.additional_count,
+            )
+
+
+            udp_socket.sendto(response_header.as_bytes, source)
         except Exception as e:
             print(f"Error receiving data: {e}")
             break
