@@ -59,7 +59,7 @@ class DNSQuestion:
         return cls(name, qtype, qclass)
 
     @property
-    def _encoded_name(self):
+    def encoded_name(self):
         encoded = b""
         for part in self.name.split("."):
             encoded += bytes([len(part)]) + part.encode()
@@ -68,7 +68,42 @@ class DNSQuestion:
 
     @property
     def as_bytes(self):
-        return self._encoded_name + struct.pack("!HH", self.qtype, self.qclass)
+        return self.encoded_name + struct.pack("!HH", self.qtype, self.qclass)
+
+
+@dataclass(frozen=True)
+class DNSAnswer:
+    name: str
+    qtype: int
+    qclass: int
+    ttl: int
+    rdata_length: int
+    rdata: str
+
+    @property
+    def encoded_name(self):
+        encoded = b""
+        for part in self.name.split("."):
+            encoded += bytes([len(part)]) + part.encode()
+        return encoded + b"\x00"
+
+    @property
+    def encoded_rdata(self):
+        parts = [int(x) for x in self.rdata.split(".")]
+        return struct.pack("!BBBB", *parts)
+
+    @property
+    def as_bytes(self):
+
+        return (
+                self.encoded_name
+                + struct.pack("!H", self.qtype)
+                + struct.pack("!H", self.qclass)
+                + struct.pack("!I", self.ttl)
+                + struct.pack("!H", self.rdata_length)
+                + self.encoded_rdata
+        )
+
 
 def main():
     udp_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -83,14 +118,23 @@ def main():
                 id=request_header.id,
                 flags=0x8180,
                 question_count=1,
-                answer_count=request_header.answer_count,
-                authority_count=request_header.authority_count,
+                answer_count=1,
+                authority_count=0,
                 additional_count=request_header.additional_count,
             )
 
             request_question = DNSQuestion.from_bytes(buf)
+            response_answer = DNSAnswer(
+                name=request_question.name,
+                qtype=1,
+                qclass=1,
+                ttl=60,
+                rdata_length=4,
+                rdata="8.8.8.8",
+            )
 
-            response = response_header.as_bytes + request_question.as_bytes
+            response = response_header.as_bytes + request_question.as_bytes + response_answer.as_bytes
+
 
             udp_socket.sendto(response, source)
         except Exception as e:
