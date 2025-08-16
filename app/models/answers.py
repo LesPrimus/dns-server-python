@@ -5,19 +5,19 @@ __all__ = ["DNSAnswer"]
 
 @dataclass(frozen=True)
 class DNSAnswer:
-    name: str
+    name: bytes
     qtype: int
     qclass: int
     ttl: int
     rdata_length: int
     rdata: str
 
-    @property
-    def encoded_name(self):
-        encoded = b""
-        for part in self.name.split("."):
-            encoded += bytes([len(part)]) + part.encode()
-        return encoded + b"\x00"
+    # @property
+    # def encoded_name(self):
+    #     encoded = b""
+    #     for part in self.name.split("."):
+    #         encoded += bytes([len(part)]) + part.encode()
+    #     return encoded + b"\x00"
 
     @property
     def encoded_rdata(self):
@@ -28,7 +28,7 @@ class DNSAnswer:
     def as_bytes(self):
 
         return (
-                self.encoded_name
+                self.name
                 + struct.pack("!H", self.qtype)
                 + struct.pack("!H", self.qclass)
                 + struct.pack("!I", self.ttl)

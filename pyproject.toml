@@ -7,4 +7,5 @@ dependencies = [
     "dnslib>=0.9.26",
     "lark>=1.2.2",
     "pyparsing>=3.2.3",
+    "pytest>=8.4.1",
 ]

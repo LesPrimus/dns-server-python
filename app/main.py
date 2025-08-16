@@ -1,4 +1,5 @@
 import socket
+
 from app.models import DNSHeader, DNSFlags, DNSQuestion, DNSAnswer
 
 
@@ -10,6 +11,7 @@ def main():
         try:
             buf, source = udp_socket.recvfrom(512)
 
+            # HEADER
             request_header = DNSHeader.from_bytes(buf)
             request_flags = DNSFlags.from_bytes(buf)
 
@@ -26,23 +28,35 @@ def main():
             response_header = DNSHeader(
                 id=request_header.id,
                 flags=response_flags.as_int,
-                question_count=1,
-                answer_count=1,
+                question_count=request_header.question_count,
+                answer_count=request_header.question_count,
                 authority_count=0,
                 additional_count=request_header.additional_count,
             )
 
-            request_question = DNSQuestion.from_bytes(buf)
-            response_answer = DNSAnswer(
-                name=request_question.name,
-                qtype=1,
-                qclass=1,
-                ttl=60,
-                rdata_length=4,
-                rdata="8.8.8.8",
-            )
+            response = response_header.as_bytes
+            answers = []
 
-            response = response_header.as_bytes + request_question.as_bytes + response_answer.as_bytes
+            # QUESTIONS
+
+            request_questions = DNSQuestion.from_bytes(buf, qdcount=request_header.question_count)
+
+            for request_question in request_questions:
+                response += request_question.as_bytes
+                answers.append(DNSAnswer(
+                    name=request_question.name,
+                    qtype=1,
+                    qclass=1,
+                    ttl=60,
+                    rdata_length=4,
+                    rdata="8.8.8.8",
+                ))
+
+            for answer in answers:
+                response += answer.as_bytes
+
+
+
 
 
             udp_socket.sendto(response, source)
