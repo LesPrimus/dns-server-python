@@ -1,6 +1,51 @@
 import socket
 import struct
 from dataclasses import dataclass, astuple
+from typing import Self
+
+
+@dataclass(frozen=True)
+class DNSFlags:
+    qr: int
+    opcode: int
+    aa: int
+    tc: int
+    rd: int
+    ra: int
+    z: int
+    rcode: int
+
+    @classmethod
+    def from_bytes(cls, buf: bytes) -> Self:
+        # Extract 16-bit flags value from buffer (bytes 2-4 in DNS header)
+        flags = int.from_bytes(buf[2:4])
+
+        return cls(
+            qr=(flags >> 15) & 0x1,  # bit 15
+            opcode=(flags >> 11) & 0xF,  # bits 11-14
+            aa=(flags >> 10) & 0x1,  # bit 10
+            tc=(flags >> 9) & 0x1,  # bit 9
+            rd=(flags >> 8) & 0x1,  # bit 8
+            ra=(flags >> 7) & 0x1,  # bit 7
+            z=(flags >> 4) & 0x7,  # bits 4-6
+            rcode=flags & 0xF  # bits 0-3
+        )
+
+
+    @property
+    def as_int(self) -> int:
+        # Build 16-bit flags value by shifting bits to correct positions
+        return (
+                (self.qr & 0x1) << 15 |  # QR - 1 bit
+                (self.opcode & 0xF) << 11 |  # OPCODE - 4 bits
+                (self.aa & 0x1) << 10 |  # AA - 1 bit
+                (self.tc & 0x1) << 9 |  # TC - 1 bit
+                (self.rd & 0x1) << 8 |  # RD - 1 bit
+                (self.ra & 0x1) << 7 |  # RA - 1 bit
+                (self.z & 0x7) << 4 |  # Z - 3 bits
+                (self.rcode & 0xF)  # RCODE - 4 bits
+        )
+
 
 @dataclass(frozen=True)
 class DNSHeader:
@@ -114,9 +159,21 @@ def main():
             buf, source = udp_socket.recvfrom(512)
 
             request_header = DNSHeader.from_bytes(buf)
+            request_flags = DNSFlags.from_bytes(buf)
+
+            response_flags = DNSFlags(
+                qr=1,
+                opcode=request_flags.opcode,
+                aa=0,
+                tc=0,
+                rd=request_flags.rd,
+                ra=1,
+                z=0,
+                rcode=0 if request_flags.opcode == 0 else 4,
+            )
             response_header = DNSHeader(
                 id=request_header.id,
-                flags=0x8180,
+                flags=response_flags.as_int,
                 question_count=1,
                 answer_count=1,
                 authority_count=0,
