@@ -1,7 +1,7 @@
 import io
 import socket
 
-from app.models import DNSHeader, DNSRecord, DNSQuestion
+from app.models import DNSHeader, DNSRecord, DNSQuestion, DNSFlags
 from app.models.packet import DNSPacket
 
 
@@ -16,7 +16,13 @@ def main():
 
             # Header
             header = DNSHeader.from_bytes(reader)
-            header.flags = 1 << 15 | 1 << 8  # Sets QR=1, OPCODE=0, RD=1
+
+            flags = DNSFlags.from_int(header.flags)
+            flags.qr = 1
+            flags.rcode = 0 if flags.opcode == 0 else 4
+
+
+            header.flags = flags.as_int
 
 
             # Question

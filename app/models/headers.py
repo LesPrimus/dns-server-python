@@ -1,14 +1,14 @@
 import io
 import struct
 from dataclasses import astuple, dataclass
-from typing import Self, TYPE_CHECKING
+from typing import Self
 
 
 __all__ = ["DNSHeader", "DNSFlags"]
 
 
 
-@dataclass(frozen=True)
+@dataclass
 class DNSFlags:
     qr: int
     opcode: int
@@ -20,9 +20,8 @@ class DNSFlags:
     rcode: int
 
     @classmethod
-    def from_bytes(cls, buf: bytes) -> Self:
+    def from_int(cls, flags: int) -> Self:
         # Extract 16-bit flags value from buffer (bytes 2-4 in DNS header)
-        flags = int.from_bytes(buf[2:4])
 
         return cls(
             qr=(flags >> 15) & 0x1,  # bit 15
@@ -67,3 +66,4 @@ class DNSHeader:
     @property
     def as_bytes(self):
         return struct.pack("!HHHHHH", *astuple(self))
+
