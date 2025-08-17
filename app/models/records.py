@@ -3,7 +3,7 @@ from dataclasses import dataclass
 
 __all__ = ["DNSRecord"]
 
-from app.utils import decode_name, encode_ipv4
+from app.utils import encode_ipv4, encode_dns_name
 
 
 @dataclass
@@ -18,7 +18,7 @@ class DNSRecord:
     def as_bytes(self):
         rdlength = len(self.data.split("."))
         return (
-                self.name
+                encode_dns_name(self.name)
                 + struct.pack(">H", self.type_)
                 + struct.pack(">H", self.class_)
                 + struct.pack(">I", self.ttl)
