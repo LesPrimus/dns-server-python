@@ -17,7 +17,7 @@ requires-dist = [
     { name = "dnslib", specifier = ">=0.9.26" },
     { name = "lark", specifier = ">=1.2.2" },
     { name = "pyparsing", specifier = ">=3.2.3" },
-    { name = "pytest" },
+    { name = "pytest", specifier = ">=8.4.1" },
 ]
 
 [[package]]

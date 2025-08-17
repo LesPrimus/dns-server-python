@@ -1,8 +1,13 @@
 import struct
 from dataclasses import astuple, dataclass
-from typing import Self
+from typing import Self, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from app.models import Reader
 
 __all__ = ["DNSHeader", "DNSFlags"]
+
+
 
 @dataclass(frozen=True)
 class DNSFlags:
@@ -57,8 +62,8 @@ class DNSHeader:
     additional_count: int
 
     @classmethod
-    def from_bytes(cls, buf):
-        return cls(*struct.unpack("!6H", buf[:12]))
+    def from_bytes(cls, reader: "Reader") -> Self:
+        return cls(*struct.unpack("!6H", reader.read(12)))
 
     @property
     def as_bytes(self):

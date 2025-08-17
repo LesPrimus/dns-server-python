@@ -1,79 +1,64 @@
-import dataclasses
-import struct
-from io import BytesIO
-
 import pytest
 
-from app.models import DNSQuestion
+from app.models import DNSHeader, DNSQuestion
+from app.models.packet import DNSPacket
 
-@dataclasses.dataclass
-class Question:
-    name: bytes
-    type: int
-    class_: int
 
-buffer1 =  b'\x13\x8b\x01\x00\x00\x01\x00\x00\x00\x00\x00\x00\x0ccodecrafters\x02io\x00\x00\x01\x00\x01'
-buffer2 =  b'\x92\xd3\x01\x00\x00\x02\x00\x00\x00\x00\x00\x00\x03abc\x11longassdomainname\x03com\x00\x00\x01\x00\x01\x03def\xc0\x10\x00\x01\x00\x01'
+@pytest.fixture()
+def simple_dns_response():
+    from app.models import Reader
+    buffer =  b'\x13\x8b\x01\x00\x00\x01\x00\x00\x00\x00\x00\x00\x0ccodecrafters\x02io\x00\x00\x01\x00\x01'
+    return Reader(buffer)
 
-def parse_question(buf, qdcount=1):
-    """Parse questions from DNS packet, handling multiple questions and compression"""
-    questions = []
-    offset = 12  # Start after header
+@pytest.fixture()
+def compressed_dns_response():
+    from app.models import Reader
+    buffer = b'`V\x81\x80\x00\x01\x00\x01\x00\x00\x00\x00\x03www\x07example\x03com\x00\x00\x01\x00\x01\xc0\x0c\x00\x01\x00\x01\x00\x00R\x9b\x00\x04]\xb8\xd8"'
+    return Reader(buffer)
 
-    # Parse each question based on qdcount from header
-    # header = parse_header(buf)
+class TestDNSHeader:
+    def test_from_bytes_simple_dns_response(self, simple_dns_response):
+        header = DNSHeader.from_bytes(simple_dns_response)
+        assert header.id == 5003
+        assert header.flags == 256
+        assert header.question_count == 1
+        assert header.answer_count == 0
+        assert header.authority_count == 0
+        assert header.additional_count == 0
 
-    for _ in range(qdcount):
+    def test_from_bytes_compressed_dns_response(self, compressed_dns_response):
+        header = DNSHeader.from_bytes(compressed_dns_response)
+        assert header.id == 24662
+        assert header.flags == 33152
+        assert header.question_count == 1
+        assert header.answer_count == 1
+        assert header.authority_count == 0
+        assert header.additional_count == 0
 
-        # Parse domain name
-        name_bytes, new_offset = parse_domain_name(buf, offset)
-        question_name = name_bytes
-        offset = new_offset
+class TestDNSQuestion:
+    def test_as_bytes_simple_dns_response(self, simple_dns_response):
+        simple_dns_response.read(12)
+        question = DNSQuestion.from_bytes(simple_dns_response)
+        assert question.as_bytes == b'\x0ccodecrafters\x02io\x00\x00\x01\x00\x01'
 
-        # Parse type and class (4 bytes total)
-        question_type, question_class_ = struct.unpack("!HH", buf[offset : offset + 4])
-        offset += 4
+class TestDNSPacket:
+    def test_from_bytes_simple_dns_response(self, simple_dns_response):
+        request_header = DNSHeader.from_bytes(simple_dns_response)
 
-        questions.append(Question(question_name, question_type, question_class_))
+        response_header = DNSHeader(
+            id=request_header.id,
+            flags=1 << 15,  # QR - response
+            question_count=request_header.question_count,
+            answer_count=request_header.question_count,
+            authority_count=request_header.authority_count,
+            additional_count=request_header.additional_count,
 
-    return questions
+        )
 
-def parse_domain_name(buf, offset):
-    """Parse a domain name, handling compression pointers"""
-    name_parts = []
-    original_offset = offset
-    jumped = False
+        packet = DNSPacket(
+            header=response_header,
+            questions=[DNSQuestion.from_bytes(simple_dns_response) for _ in range(request_header.question_count)],
+        )
 
-    while offset < len(buf):
-        length = buf[offset]
-
-        # Check for compression pointer (top 2 bits set)
-        if (length & 0xC0) == 0xC0:
-            if not jumped:
-                original_offset = offset + 2
-                jumped = True
-            # Extract pointer (bottom 14 bits)
-            pointer = ((length & 0x3F) << 8) | buf[offset + 1]
-            offset = pointer
-            continue
-
-        # End of name
-        if length == 0:
-            offset += 1
-            break
-
-        # Regular label
-        offset += 1
-        label = buf[offset : offset + length]
-        name_parts.append(bytes([length]) + label)
-        offset += length
-
-    # Reconstruct the name with length prefixes and null terminator
-    name_bytes = b"".join(name_parts) + b"\x00"
-
-    return name_bytes, original_offset if jumped else offset
-
-def test_some():
-    results = DNSQuestion.from_bytes(buffer2, qdcount=2)
-    print(results)
-    assert 0
+        print(packet.as_bytes)
+        assert 0
