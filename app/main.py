@@ -24,17 +24,19 @@ def main():
 
             header.flags = flags.as_int
 
-
             # Question
-            question = DNSQuestion.from_bytes(reader)
+            questions = [
+                DNSQuestion.from_bytes(reader) for _ in range(header.question_count)
+            ]
 
             # Answer
+            # todo finish me.
             answer = DNSRecord(name=b"\xc0\x0c", type_=1, class_=1, ttl=60, data=b"\x01\x02\x03\x04")
 
 
             packet = DNSPacket(
                 header,
-                [question],
+                questions,
                 [answer]
             )
 
