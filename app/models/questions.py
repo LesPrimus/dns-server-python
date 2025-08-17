@@ -1,11 +1,9 @@
+import io
 import struct
 from dataclasses import dataclass
-from typing import TYPE_CHECKING
 
 from app.utils import decode_name, encode_dns_name
 
-if TYPE_CHECKING:
-    from app.models import Reader
 
 __all__ = ["DNSQuestion"]
 
@@ -18,7 +16,7 @@ class DNSQuestion:
 
 
     @classmethod
-    def from_bytes(cls, reader: "Reader"):
+    def from_bytes(cls, reader: io.BytesIO):
         name = decode_name(reader)
         data = reader.read(4)
         type_, class_ = struct.unpack("!HH", data)

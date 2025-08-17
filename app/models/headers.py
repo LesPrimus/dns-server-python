@@ -1,9 +1,8 @@
+import io
 import struct
 from dataclasses import astuple, dataclass
 from typing import Self, TYPE_CHECKING
 
-if TYPE_CHECKING:
-    from app.models import Reader
 
 __all__ = ["DNSHeader", "DNSFlags"]
 
@@ -52,7 +51,7 @@ class DNSFlags:
         )
 
 
-@dataclass(frozen=True)
+@dataclass
 class DNSHeader:
     id: int
     flags: int
@@ -62,7 +61,7 @@ class DNSHeader:
     additional_count: int
 
     @classmethod
-    def from_bytes(cls, reader: "Reader") -> Self:
+    def from_bytes(cls, reader: io.BytesIO) -> Self:
         return cls(*struct.unpack("!6H", reader.read(12)))
 
     @property

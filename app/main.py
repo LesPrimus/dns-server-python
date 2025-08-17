@@ -1,6 +1,7 @@
+import io
 import socket
 
-from app.models import DNSHeader, DNSFlags, DNSQuestion, Reader
+from app.models import DNSHeader, DNSRecord, DNSQuestion
 from app.models.packet import DNSPacket
 
 
@@ -11,36 +12,31 @@ def main():
     while True:
         try:
             buf, source = udp_socket.recvfrom(512)
-            reader = Reader(buf)
+            reader = io.BytesIO(buf)
 
-            # Parse request header
-            request_header = DNSHeader.from_bytes(reader)
-
-            # Parse question
-
-            request_question = DNSQuestion.from_bytes(reader)
-
-            # Create response header
-            response_header = DNSHeader(
-                id=request_header.id,
-                flags=1 << 15,  # Use proper flags
-                question_count=1,
-                answer_count=0,
-                authority_count=0,
-                additional_count=0,
-            )
-
-            # Parse questions from request
+            # Header
+            header = DNSHeader.from_bytes(reader)
+            header.flags = 1 << 15 | 1 << 8  # Sets QR=1, OPCODE=0, RD=1
 
 
-            # Create packet with header and questions
+            # Question
+            question = DNSQuestion.from_bytes(reader)
+
+            # Answer
+            answer = DNSRecord(name=b"\xc0\x0c", type_=1, class_=1, ttl=60, data=b"\x01\x02\x03\x04")
+
+
             packet = DNSPacket(
-                header=response_header,
-                questions=[request_question],
-
+                header,
+                [question],
+                [answer]
             )
 
-            udp_socket.sendto(packet.as_bytes, source)
+
+
+            response = packet.as_bytes
+
+            udp_socket.sendto(response, source)
             
         except Exception as e:
             print(f"Error receiving data: {e}")

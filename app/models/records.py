@@ -3,7 +3,7 @@ from dataclasses import dataclass
 
 __all__ = ["DNSRecord"]
 
-from app.utils import decode_name
+from app.utils import decode_name, encode_ipv4
 
 
 @dataclass
@@ -15,7 +15,7 @@ class DNSRecord:
     data: bytes
 
     @classmethod
-    def parse_record(cls, reader):
+    def from_bytes(cls, reader):
         name = decode_name(reader)
         # the the type, class, TTL, and data length together are 10 bytes (2 + 2 + 4 + 2 = 10)
         # so we read 10 bytes
@@ -24,3 +24,15 @@ class DNSRecord:
         type_, class_, ttl, data_len = struct.unpack("!HHIH", data)
         data = reader.read(data_len)
         return DNSRecord(name, type_, class_, ttl, data)
+
+    @property
+    def as_bytes(self):
+        rdlength = len(self.data)
+        return (
+                self.name
+                + struct.pack(">H", self.type_)
+                + struct.pack(">H", self.class_)
+                + struct.pack(">I", self.ttl)
+                + struct.pack(">H", rdlength)
+                + self.data
+        )
