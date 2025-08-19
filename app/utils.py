@@ -31,3 +31,6 @@ def encode_dns_name(domain_name):
 
 def encode_ipv4(ip):
     return struct.pack("!BBBB", *map(int, ip.split(".")))
+
+def decode_ipv4(data):
+    return ".".join(map(str, struct.unpack("!BBBB", data)))
