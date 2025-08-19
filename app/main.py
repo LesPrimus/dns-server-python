@@ -3,8 +3,8 @@ from app.utils import get_args
 
 
 def main(resolver_host_and_port: str = None):
-    server = Server("127.0.0.1", 2053, resolver=resolver_host_and_port)
-    server.run()
+    with Server("127.0.0.1", 2053, resolver=resolver_host_and_port) as server:
+        server.run()
 
 
 if __name__ == "__main__":

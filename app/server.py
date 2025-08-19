@@ -8,15 +8,22 @@ from app.utils import get_resolver_socket, query_resolver
 
 
 class Server:
-    default_ttl = 60  # sec.
-    default_data = "1.2.3.4"
+    DEFAULT_TTL = 60  # sec.
+    DEFAULT_DATA = "1.2.3.4"
+    DNS_BUFFER_SIZE = 512
 
     def __init__(self, host: str, port: int, *, resolver: str = None):
         self.host = host
         self.port = port
         self.udp_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        self.udp_socket.bind(("127.0.0.1", 2053))
+        self.udp_socket.bind((host, port))
         self.resolver_socket = get_resolver_socket(resolver) if resolver else None
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.close()
 
     @staticmethod
     def get_header(reader: io.BytesIO) -> DNSHeader:
@@ -63,14 +70,14 @@ class Server:
                     name=question.name,
                     type_=question.qtype,
                     class_=question.qclass,
-                    ttl=self.default_ttl,
-                    data=self.default_data,
+                    ttl=self.DEFAULT_TTL,
+                    data=self.DEFAULT_DATA,
                 )
                 for question in questions
             ]
 
     def handle_request(self):
-        buf, source = self.udp_socket.recvfrom(512)
+        buf, source = self.udp_socket.recvfrom(self.DNS_BUFFER_SIZE)
         reader = io.BytesIO(buf)
 
         header = self.get_header(reader)
@@ -87,3 +94,8 @@ class Server:
             except Exception as e:
                 print(f"Error receiving data: {e}")
                 break
+
+    def close(self):
+        self.udp_socket.close()
+        if self.resolver_socket:
+            self.resolver_socket.close()
