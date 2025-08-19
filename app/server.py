@@ -34,7 +34,7 @@ class Server:
 
     def get_answers_from_resolver(
         self, header: DNSHeader, questions: Iterable[DNSQuestion]
-    ):
+    ) -> list[DNSRecord]:
         resolved_answers = []
         resolver_header = DNSHeader(
             id=header.id,
@@ -53,7 +53,7 @@ class Server:
         return resolved_answers
 
     def get_answers(
-        self, header: DNSHeader, reader: io.BytesIO, questions: Iterable[DNSQuestion]
+        self, header: DNSHeader, questions: Iterable[DNSQuestion]
     ) -> list[DNSRecord]:
         if self.resolver_socket:
             return self.get_answers_from_resolver(header, questions)
@@ -75,7 +75,7 @@ class Server:
 
         header = self.get_header(reader)
         questions = self.get_questions(header, reader)
-        answers = self.get_answers(header, reader, questions)
+        answers = self.get_answers(header, questions)
 
         packet = DNSPacket(header, questions, answers)
         self.udp_socket.sendto(packet.as_bytes, source)
