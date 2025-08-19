@@ -42,9 +42,11 @@ def get_args():
     parser.add_argument("--resolver", type=str)
     return parser.parse_args()
 
-def get_resolver_socket(host, port):
+def get_resolver_socket(host_and_port: str):
+    forward_host, forward_port = host_and_port.split(":")
+    forward_port = int(forward_port)
     resolver_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    resolver_socket.connect((host, port))
+    resolver_socket.connect((forward_host, forward_port))
     return resolver_socket
 
 def query_resolver(resolver_socket, query):
