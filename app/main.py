@@ -1,28 +1,10 @@
 import io
 import socket
-import argparse
 
 from app.models import DNSHeader, DNSRecord, DNSQuestion, DNSFlags
 from app.models.packet import DNSPacket
+from app.utils import get_args, get_resolver_socket, query_resolver
 
-def get_args():
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--resolver", type=str)
-    return parser.parse_args()
-
-def get_resolver_socket(host, port):
-    resolver_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    resolver_socket.connect((host, port))
-    return resolver_socket
-
-def query_resolver(resolver_socket, query):
-    resolver_socket.send(query)
-    buffer, _ = resolver_socket.recvfrom(512)
-    reader = io.BytesIO(buffer)
-    header = DNSHeader.from_bytes(reader)
-    questions = [DNSQuestion.from_bytes(reader) for _ in range(header.question_count)]
-    answers = [DNSRecord.from_bytes(reader) for _ in range(header.answer_count)]
-    return questions, answers
 
 def main():
     resolver = get_args().resolver

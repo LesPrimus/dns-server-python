@@ -1,5 +1,7 @@
+import argparse
 import io
 import struct
+import socket
 
 
 def decode_name(reader: io.BytesIO):
@@ -34,3 +36,24 @@ def encode_ipv4(ip):
 
 def decode_ipv4(data):
     return ".".join(map(str, struct.unpack("!BBBB", data)))
+
+def get_args():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--resolver", type=str)
+    return parser.parse_args()
+
+def get_resolver_socket(host, port):
+    resolver_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    resolver_socket.connect((host, port))
+    return resolver_socket
+
+def query_resolver(resolver_socket, query):
+    from app.models import DNSHeader, DNSQuestion, DNSRecord
+
+    resolver_socket.send(query)
+    buffer, _ = resolver_socket.recvfrom(512)
+    reader = io.BytesIO(buffer)
+    header = DNSHeader.from_bytes(reader)
+    questions = [DNSQuestion.from_bytes(reader) for _ in range(header.question_count)]
+    answers = [DNSRecord.from_bytes(reader) for _ in range(header.answer_count)]
+    return questions, answers
