@@ -19,12 +19,12 @@ class DNSRecord:
     def as_bytes(self):
         rdlength = len(self.data.split("."))
         return (
-                encode_dns_name(self.name)
-                + struct.pack(">H", self.type_)
-                + struct.pack(">H", self.class_)
-                + struct.pack(">I", self.ttl)
-                + struct.pack(">H", rdlength)
-                + encode_ipv4(self.data)
+            encode_dns_name(self.name)
+            + struct.pack(">H", self.type_)
+            + struct.pack(">H", self.class_)
+            + struct.pack(">I", self.ttl)
+            + struct.pack(">H", rdlength)
+            + encode_ipv4(self.data)
         )
 
     @classmethod

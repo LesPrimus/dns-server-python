@@ -15,6 +15,7 @@ def decode_name(reader: io.BytesIO):
             parts.append(reader.read(length))
     return b".".join(parts)
 
+
 def decode_compressed_name(length, reader):
     pointer_bytes = bytes([length & 0b0011_1111]) + reader.read(1)
     pointer = struct.unpack("!H", pointer_bytes)[0]
@@ -31,16 +32,20 @@ def encode_dns_name(domain_name):
         encoded += bytes([len(part)]) + part
     return encoded + b"\x00"
 
+
 def encode_ipv4(ip):
     return struct.pack("!BBBB", *map(int, ip.split(".")))
 
+
 def decode_ipv4(data):
     return ".".join(map(str, struct.unpack("!BBBB", data)))
+
 
 def get_args():
     parser = argparse.ArgumentParser()
     parser.add_argument("--resolver", type=str)
     return parser.parse_args()
+
 
 def get_resolver_socket(host_and_port: str):
     forward_host, forward_port = host_and_port.split(":")
@@ -48,6 +53,7 @@ def get_resolver_socket(host_and_port: str):
     resolver_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     resolver_socket.connect((forward_host, forward_port))
     return resolver_socket
+
 
 def query_resolver(resolver_socket, query):
     from app.models import DNSHeader, DNSQuestion, DNSRecord

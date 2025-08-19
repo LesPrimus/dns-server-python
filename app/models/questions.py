@@ -14,7 +14,6 @@ class DNSQuestion:
     qtype: int
     qclass: int
 
-
     @classmethod
     def from_bytes(cls, reader: io.BytesIO):
         name = decode_name(reader)

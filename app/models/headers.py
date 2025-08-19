@@ -7,7 +7,6 @@ from typing import Self
 __all__ = ["DNSHeader", "DNSFlags"]
 
 
-
 @dataclass
 class DNSFlags:
     qr: int
@@ -31,22 +30,21 @@ class DNSFlags:
             rd=(flags >> 8) & 0x1,  # bit 8
             ra=(flags >> 7) & 0x1,  # bit 7
             z=(flags >> 4) & 0x7,  # bits 4-6
-            rcode=flags & 0xF  # bits 0-3
+            rcode=flags & 0xF,  # bits 0-3
         )
-
 
     @property
     def as_int(self) -> int:
         # Build 16-bit flags value by shifting bits to correct positions
         return (
-                (self.qr & 0x1) << 15 |  # QR - 1 bit
-                (self.opcode & 0xF) << 11 |  # OPCODE - 4 bits
-                (self.aa & 0x1) << 10 |  # AA - 1 bit
-                (self.tc & 0x1) << 9 |  # TC - 1 bit
-                (self.rd & 0x1) << 8 |  # RD - 1 bit
-                (self.ra & 0x1) << 7 |  # RA - 1 bit
-                (self.z & 0x7) << 4 |  # Z - 3 bits
-                (self.rcode & 0xF)  # RCODE - 4 bits
+            (self.qr & 0x1) << 15  # QR - 1 bit
+            | (self.opcode & 0xF) << 11  # OPCODE - 4 bits
+            | (self.aa & 0x1) << 10  # AA - 1 bit
+            | (self.tc & 0x1) << 9  # TC - 1 bit
+            | (self.rd & 0x1) << 8  # RD - 1 bit
+            | (self.ra & 0x1) << 7  # RA - 1 bit
+            | (self.z & 0x7) << 4  # Z - 3 bits
+            | (self.rcode & 0xF)  # RCODE - 4 bits
         )
 
 
@@ -66,4 +64,3 @@ class DNSHeader:
     @property
     def as_bytes(self):
         return struct.pack("!HHHHHH", *astuple(self))
-

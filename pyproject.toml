@@ -9,3 +9,8 @@ dependencies = [
     "pyparsing>=3.2.3",
     "pytest>=8.4.1",
 ]
+
+[tool.uv]
+dev-dependencies = [
+    "ruff>=0.12.9",
+]

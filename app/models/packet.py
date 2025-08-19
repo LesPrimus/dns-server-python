@@ -4,6 +4,7 @@ from app.models import DNSHeader, DNSQuestion, DNSRecord
 
 __all__ = ["DNSPacket"]
 
+
 @dataclass
 class DNSPacket:
     header: DNSHeader
@@ -25,4 +26,3 @@ class DNSPacket:
         for answer in self.answers:
             result += answer.as_bytes
         return result
-
