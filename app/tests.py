@@ -50,7 +50,7 @@ class TestDNSHeader:
         header = DNSHeader.from_bytes(buffer)
         assert header.as_bytes == buffer.getvalue()
 
-    def test_malformed_header(self):
+    def test_from_bytes_malformed_header(self):
         # Create a truncated buffer (less than required 12 bytes for DNS header)
         truncated_buffer = struct.pack(
             "!3H",  # Only pack 3 fields instead of 6
@@ -62,3 +62,15 @@ class TestDNSHeader:
 
         with pytest.raises(DNSHeaderError, match="Error parsing DNS header"):
             DNSHeader.from_bytes(buffer)
+
+    def test_as_bytes_with_large_values(self):
+        header = DNSHeader(
+            id=65536,  # Exceeds 16-bit unsigned int
+            flags=DNSFlags(qr=0, opcode=0, aa=0, tc=0, rd=0, ra=0, z=0, rcode=0),
+            question_count=1,
+            answer_count=1,
+            authority_count=1,
+            additional_count=1,
+        )
+        with pytest.raises(DNSHeaderError, match="Error building DNS header"):
+            _ = header.as_bytes

@@ -87,12 +87,15 @@ class DNSHeader:
 
     @property
     def as_bytes(self):
-        return struct.pack(
-            "!6H",
-            self.id,
-            self.flags.as_int,
-            self.question_count,
-            self.answer_count,
-            self.authority_count,
-            self.additional_count,
-        )
+        try:
+            return struct.pack(
+                "!6H",
+                self.id,
+                self.flags.as_int,
+                self.question_count,
+                self.answer_count,
+                self.authority_count,
+                self.additional_count,
+            )
+        except struct.error as e:
+            raise DNSHeaderError(f"Error building DNS header: {e}")
