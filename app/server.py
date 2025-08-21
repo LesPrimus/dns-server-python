@@ -28,11 +28,8 @@ class Server:
     @staticmethod
     def get_header(reader: io.BytesIO) -> DNSHeader:
         header = DNSHeader.from_bytes(reader)
-        # Fixme: move to a setter
-        flags = DNSFlags.from_int(header.flags)
-        flags.qr = 1
-        flags.rcode = 0 if flags.opcode == 0 else 4
-        header.flags = flags.as_int
+        header.flags.qr = 1
+        header.flags.rcode = 0 if header.flags.opcode == 0 else 4
         return header
 
     @staticmethod
@@ -45,7 +42,7 @@ class Server:
         resolved_answers = []
         resolver_header = DNSHeader(
             id=header.id,
-            flags=0,
+            flags=DNSFlags.from_int(0),
             question_count=1,
             answer_count=0,
             authority_count=0,

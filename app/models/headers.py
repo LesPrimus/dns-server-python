@@ -51,7 +51,7 @@ class DNSFlags:
 @dataclass
 class DNSHeader:
     id: int
-    flags: int
+    flags: DNSFlags
     question_count: int
     answer_count: int
     authority_count: int
@@ -59,8 +59,28 @@ class DNSHeader:
 
     @classmethod
     def from_bytes(cls, reader: io.BytesIO) -> Self:
-        return cls(*struct.unpack("!6H", reader.read(12)))
+        (
+            id_,
+            flags,
+            question_count,
+            answers_count,
+            authority_count,
+            additional_count,
+        ) = struct.unpack("!6H", reader.read(12))
+        flags = DNSFlags.from_int(flags)
+
+        return cls(
+            id_, flags, question_count, answers_count, authority_count, additional_count
+        )
 
     @property
     def as_bytes(self):
-        return struct.pack("!HHHHHH", *astuple(self))
+        return struct.pack(
+            "!6H",
+            self.id,
+            self.flags.as_int,
+            self.question_count,
+            self.answer_count,
+            self.authority_count,
+            self.additional_count,
+        )
