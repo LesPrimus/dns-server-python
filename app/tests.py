@@ -34,3 +34,17 @@ class TestDNSHeader:
         assert header.answer_count == answers_count
         assert header.authority_count == authority_count
         assert header.additional_count == additional_count
+
+    def test_as_bytes(self):
+        buffer = struct.pack(
+            "!6H",
+            id_ := 123,
+            flags := 256,
+            question_count := 1,
+            answers_count := 1,
+            authority_count := 1,
+            additional_count := 1,
+        )
+        buffer = io.BytesIO(buffer)
+        header = DNSHeader.from_bytes(buffer)
+        assert header.as_bytes == buffer.getvalue()
