@@ -1,10 +1,14 @@
 import io
 import struct
-from dataclasses import astuple, dataclass
+from dataclasses import dataclass
 from typing import Self
 
 
-__all__ = ["DNSHeader", "DNSFlags"]
+__all__ = ["DNSHeader", "DNSFlags", "DNSHeaderError"]
+
+
+class DNSHeaderError(Exception):
+    pass
 
 
 @dataclass
@@ -59,19 +63,27 @@ class DNSHeader:
 
     @classmethod
     def from_bytes(cls, reader: io.BytesIO) -> Self:
-        (
-            id_,
-            flags,
-            question_count,
-            answers_count,
-            authority_count,
-            additional_count,
-        ) = struct.unpack("!6H", reader.read(12))
-        flags = DNSFlags.from_int(flags)
+        try:
+            (
+                id_,
+                flags,
+                question_count,
+                answers_count,
+                authority_count,
+                additional_count,
+            ) = struct.unpack("!6H", reader.read(12))
+            flags = DNSFlags.from_int(flags)
 
-        return cls(
-            id_, flags, question_count, answers_count, authority_count, additional_count
-        )
+            return cls(
+                id_,
+                flags,
+                question_count,
+                answers_count,
+                authority_count,
+                additional_count,
+            )
+        except struct.error as e:
+            raise DNSHeaderError(f"Error parsing DNS header: {e}")
 
     @property
     def as_bytes(self):
