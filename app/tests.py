@@ -4,6 +4,7 @@ import pytest
 
 from app.models import DNSHeader, DNSFlags
 from app.models.headers import DNSHeaderError
+from app.models.questions import DNSQuestion
 
 
 @pytest.fixture()
@@ -74,3 +75,20 @@ class TestDNSHeader:
         )
         with pytest.raises(DNSHeaderError, match="Error building DNS header"):
             _ = header.as_bytes
+
+
+class TestDNSQuestion:
+    def test_from_bytes(self):
+        buffer = io.BytesIO(b"\x0ccodecrafters\x02io\x00\x00\x01\x00\x01")
+        question = DNSQuestion.from_bytes(buffer)
+        assert question.name == b"codecrafters.io"
+        assert question.qtype == 1
+        assert question.qclass == 1
+
+    def test_as_bytes(self):
+        question = DNSQuestion(
+            name=b"codecrafters.io",
+            qtype=1,
+            qclass=1,
+        )
+        assert question.as_bytes == b"\x0ccodecrafters\x02io\x00\x00\x01\x00\x01"
