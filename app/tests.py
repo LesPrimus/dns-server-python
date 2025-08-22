@@ -16,6 +16,36 @@ def simple_dns_buffer():
 def compressed_dns_buffer():
     return b'`V\x81\x80\x00\x01\x00\x01\x00\x00\x00\x00\x03www\x07example\x03com\x00\x00\x01\x00\x01\xc0\x0c\x00\x01\x00\x01\x00\x00R\x9b\x00\x04]\xb8\xd8"'
 
+@pytest.fixture()
+def compressed_questions_payload():
+    """
+    Creates a DNS payload with multiple questions using name compression.
+    First question: www.example.com
+    Second question: mail.example.com (compressed pointer to "example.com")
+    """
+    # DNS Header: ID=0x1234, flags=0x0100, QDCOUNT=2, ANCOUNT=0, NSCOUNT=0, ARCOUNT=0
+    header = struct.pack("!6H", 0x1234, 0x0100, 2, 0, 0, 0)
+
+    # First question: www.example.com A IN
+    first_question = (
+        b"\x03www"  # length=3, "www"
+        b"\x07example"  # length=7, "example"
+        b"\x03com"  # length=3, "com"
+        b"\x00"  # null terminator
+        b"\x00\x01"  # QTYPE = A (1)
+        b"\x00\x01"  # QCLASS = IN (1)
+    )
+
+    # Second question: mail.example.com A IN (using compression)
+    second_question = (
+        b"\x04mail"  # length=4, "mail"
+        b"\xc0\x10"  # compression pointer to offset 0x10 (where "example" starts in first question)
+        b"\x00\x01"  # QTYPE = A (1)
+        b"\x00\x01"  # QCLASS = IN (1)
+    )
+
+    return header + first_question + second_question
+
 
 class TestDNSHeader:
     def test_header_from_bytes(self):
