@@ -16,6 +16,7 @@ def simple_dns_buffer():
 def compressed_dns_buffer():
     return b'`V\x81\x80\x00\x01\x00\x01\x00\x00\x00\x00\x03www\x07example\x03com\x00\x00\x01\x00\x01\xc0\x0c\x00\x01\x00\x01\x00\x00R\x9b\x00\x04]\xb8\xd8"'
 
+
 @pytest.fixture()
 def compressed_questions_payload():
     """
@@ -44,7 +45,7 @@ def compressed_questions_payload():
         b"\x00\x01"  # QCLASS = IN (1)
     )
 
-    return header + first_question + second_question
+    return header + first_question
 
 
 class TestDNSHeader:
